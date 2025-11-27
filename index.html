@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulador Física IV - Proyecto</title>
+
+  <style>
+    :root {
+      --bg: #0e1525;
+      --panel: #182235;
+      --accent: #00eaff;
+      --text: #e6eef7;
+      --muted: #9aa5b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 20px;
+      font-size: 22px;
+      font-weight: 600;
+      border-bottom: 2px solid #1c2b3f;
+      text-align: center;
+      background: #0b1220;
+    }
+    .tabs {
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      background:#0b1220;
+      padding:12px;
+      border-bottom:1px solid #1c2b3f;
+    }
+    .tab {
+      padding:10px 18px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:500;
+      background:#111a2d;
+      color:var(--muted);
+    }
+    .tab.active {
+      color:#fff;
+      border:1px solid var(--accent);
+      box-shadow:0 0 8px var(--accent);
+    }
+    .contenido {
+      padding:20px;
+      display:none;
+    }
+    .contenido.active { display:block; }
+
+    .panel {
+      background:var(--panel);
+      padding:16px;
+      margin-bottom:20px;
+      border-radius:12px;
+      border:1px solid #253552;
+    }
+
+    label { font-size:14px; }
+    input, select {
+      width:100%;
+      padding:8px;
+      border-radius:8px;
+      background:#0f1828;
+      color:var(--text);
+      border:1px solid #243347;
+    }
+
+    .boton {
+      background: var(--accent);
+      color:#002029;
+      border:none;
+      padding:10px 18px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:bold;
+      margin-top:10px;
+    }
+    .boton:hover { opacity:.85; }
+
+    .out {
+      background:#0f1828;
+      padding:12px;
+      border-radius:8px;
+      min-height:60px;
+      border:1px solid #243347;
+    }
+    footer {
+      background:#0b1220;
+      padding:10px;
+      color:var(--muted);
+      font-size:14px;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>Simulador Interactivo – Efecto Fotoeléctrico y Relatividad</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="fotoelec">Efecto Fotoeléctrico</div>
+  <div class="tab" data-tab="rel">Relatividad</div>
+</div>
+
+<!------------------ EFECTO FOTOELECTRICO ------------------>
+<section id="fotoelec" class="contenido active">
+
+  <div class="panel">
+    <h2>Parámetros</h2>
+    <p class="note">Introduce los valores para observar el fenómeno fotoeléctrico</p>
+
+    <label>Material:</label>
+    <select id="material">
+      <option value="2.30">Sodio (2.30 eV)</option>
+      <option value="2.46">Potasio (2.46 eV)</option>
+      <option value="4.70">Cobre (4.70 eV)</option>
+      <option value="2.20">Cesio (2.20 eV)</option>
+      <option value="5.10">Platino (5.10 eV)</option>
+    </select>
+
+    <label>Longitud de onda λ (nm):</label>
+    <input type="number" id="lambda" min="100" max="1000" value="450">
+    
+    <button class="boton" onclick="resetFoto()">Reiniciar</button>
+  </div>
+
+  <div class="panel">
+    <h2>Resultados</h2>
+    <div class="out" id="resFoto"></div>
+  </div>
+
+</section>
+
+<!------------------ RELATIVIDAD ------------------>
+<section id="rel" class="contenido">
+  
+  <div class="panel">
+    <h2>Parámetros Relativistas</h2>
+
+    <label>v/c (β):</label>
+    <input type="number" id="beta" min="0" max="0.999" step="0.01" value="0.80">
+
+    <label>Tiempo propio Δτ (s):</label>
+    <input type="number" id="tau" step="0.1" value="2.5">
+
+    <button class="boton" onclick="resetRel()">Reiniciar</button>
+  </div>
+
+  <div class="panel">
+    <h2>Resultados</h2>
+    <div class="out" id="resRel"></div>
+  </div>
+
+</section>
+
+
+<footer>Proyecto educativo — Física Moderna — 2025</footer>
+
+
+<script>
+/* ===== Tabs de navegación ===== */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.contenido').forEach(c => c.classList.remove('active'));
+
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ===== Constantes Física ===== */
+const h = 6.626e-34, c = 3e8, eV = 1.602e-19;
+
+/* ===== FOTOELECTRICO ===== */
+function calcularFoto(){
+  const phi = Number(document.getElementById('material').value) * eV;
+  const lambda_nm = Number(document.getElementById('lambda').value);
+  const lambda = lambda_nm * 1e-9;
+
+  const f = c / lambda;
+  const E = h*f;
+  const Ek = E - phi;
+
+  const salida = document.getElementById('resFoto');
+  if (Ek > 0){
+    salida.innerHTML = `
+    Energía del fotón: ${(E/eV).toFixed(3)} eV<br>
+    Emisión: <b>SÍ</b><br>
+    Energía cinética: ${(Ek/eV).toFixed(3)} eV<br>
+    Voltaje de corte: ${(Ek/eV).toFixed(3)} V`
+  } else {
+    salida.innerHTML = `
+    Energía del fotón: ${(E/eV).toFixed(3)} eV<br>
+    Emisión: <b>NO (hf < φ)</b>`
+  }
+}
+document.getElementById('lambda').addEventListener('input', calcularFoto);
+document.getElementById('material').addEventListener('change', calcularFoto);
+calcularFoto();
+
+function resetFoto(){
+  document.getElementById('lambda').value = 450;
+  document.getElementById('material').value = 2.30;
+  calcularFoto();
+}
+
+/* ===== RELATIVIDAD ===== */
+function calcularRel(){
+  const beta = Number(document.getElementById('beta').value);
+  if (beta >= 1){ return alert("β no puede ser ≥ 1"); }
+
+  const tau = Number(document.getElementById('tau').value);
+  const gamma = 1 / Math.sqrt(1 - beta*beta);
+  const dt = gamma * tau;
+
+  document.getElementById('resRel').innerHTML = `
+  γ = ${gamma.toFixed(3)}<br>
+  Dilatación temporal: Δt = ${dt.toFixed(3)} s`;
+}
+document.getElementById('beta').addEventListener('input', calcularRel);
+document.getElementById('tau').addEventListener('input', calcularRel);
+calcularRel();
+
+function resetRel(){
+  document.getElementById('beta').value = 0.80;
+  document.getElementById('tau').value = 2.5;
+  calcularRel();
+}
+</script>
+
+</body>
+</html>
